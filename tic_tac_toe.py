@@ -20,13 +20,12 @@ def print_hor(board_size = 3):
 def print_ver(board_row, mark):
     """(list, list) -> None
     
-    Returns None. Prints '|   ' times element of board_row + 1. with mark placed at 
-    positions. 
+    Returns None. Prints '|   ' or '| x  ' or '| o ' for each element of
+    board_row, if  mark = [' ', 'x', 'o']. If mark has some other values the 
+    same are printed. 
     
-    >>>print_ver(3, 'X', 2)
+    >>>print_ver([0,1,0], [' ', 'x', 'o'])
     |   | X |   |
-     >>>print_hor(1, 'O', 1)
-    | O |
     """
     ver = ''
     for i in board_row:
@@ -63,48 +62,59 @@ def get_result(board = [[2,1,2],
     """(list of list of int) -> str
     
     Returns a string specifies which player won or if it is a tie returns none
+    """
+    # If we multiply all the elements in a row, if we get 0 then atleast one
+    # is empty in that row. If the multiplication is 1 (or 1 to the power of
+    # board size) it means that all the elements in the row are 1. Similarly
+    # if the multiplication is 8 (for board size of 3) that means that all
+    # the elements in the row are 2. Anything else means that row has mixed
+    # elements and thus cannot be a winning combination. Same logic can be
+    # applied to columns and diagonals. 
     
-    """  
-    row = [] 
-    for i in range(len(board)):
+    # Calculate the multiplication of all elements in rows.
+    row = []
+    length = len(board)
+    for i in range(length):
         temp = 1
         for j in board[i]:
             temp = temp*j
         row.append(temp)
-   
+
+    # Calculate the multiplication of all elements in column.
     col = []
-    for i in range(len(board[0])):
+    for i in range(length):
         temp = 1
-        for j in range(len(board)):
+        for j in range(length):
             temp = temp*board[j][i]
         col.append(temp)
-    
+
+    # Calculate the multiplication of all elements in column.
     dia = []
     temp = 1
-    for j in range(len(board)):
+    for j in range(length):
         temp = temp * board[j][j]
     dia.append(temp)
     temp = 1
-    for j in range(len(board)):
+    for j in range(length):
         temp = temp * board[j][-1-j]
     dia.append(temp)        
-    
-    if 1 in row or 1 in col or 1 in dia:
-        return 'Player 1 wins.'
-    elif 8 in row or 8 in col or 8 in dia:
-        return 'Player 2 wins.'
+
+    for temp in range(1,3):
+        if temp**length in row or temp**length in col or temp**length in dia:
+            return 'Player '+str(temp)+' wins.'
 
 def get_board(board_size):
     """(int) -> list of lists of int
     
-    Returns a list of lists of size board_size x board_size    
+    Returns a list of lists of size board_size x board_size with each element
+    as zero
     """
     return [[0 for i in range(board_size)] for j in range(board_size)]
 
 def get_board_size():
     """() -> int
+    
     Returns board size the user wants to play on
-
     """
     invalid_input = True
     while invalid_input:
@@ -140,9 +150,8 @@ def get_mark():
 def validate_input(inp):
     """(str) -> bool
 
-    Returns Ture if and only if the the string inp matches
+    Returns True if and only if the the string inp matches
     the format 'int, int'
-
     """
     import re
     rex = re.compile('^[0-9], ?[0-9]$')
@@ -151,30 +160,36 @@ def validate_input(inp):
     
 def main():
     print('Welcome!!\n')        
-    board_size = get_board_size()
-    mark = get_mark()
-    board = get_board(board_size)
+    board_size = get_board_size()   # Get board size from user
+    mark = get_mark()   # Get the marks to be used for game
+    board = get_board(board_size) # Generate a list of list for size board
     print('At any point you can enter exit to stop the game.\n'
-          'co-ordinates are to be entered as: 1,1\n'
+          'co-ordinates are to be entered as: row,column\n'
           'All the best!!')
     print_board(board, mark)
     user = 0
     while True:
-        # get input from user1 and check if the input is in array board
+        # get coordinates from user and check if the input is in the range of 
+        # board
         usr_inp = input('User%s - Enter your coordinate: ' %(user+1))
         if usr_inp.lower() == 'exit':
             input('Game terminated. Press enter to exit...')
             break
         if not validate_input(usr_inp):
-            print('Invalid input. Please try again')
+            print('Invalid input. Please try again.')
             continue
         
+        # Extract row (i) and column (j) from user input
         usr_inp = usr_inp.split(sep = ',')
+        i = int(usr_inp[0].strip()) - 1
+        j = int(usr_inp[1].strip()) - 1
         
-        i = int(usr_inp[0]) - 1
-        j = int(usr_inp[1]) - 1
+        # Make sure the input is within the range of board_size
+        if i >= board_size or j >= board_size:
+            print('Invalid input. Please try again.')
+            continue
         
-        # make sure the element is 0 and then update it.
+        # Make sure the element at the co-ordinate is 0 and then update it.
         if board[i][j] == 0:
             board[i][j] = user+1
             print_board(board,mark)
@@ -186,7 +201,6 @@ def main():
             
         # check if anyone won, if not then ask next user for input
         output = get_result(board)
-        
         if output is None:
             # check to make sure not all elements are entered. 
             # if they are then it's a tie
